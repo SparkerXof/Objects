@@ -33,9 +33,16 @@ class App():
         for i in range(len(labels)):
             if scores[i] > threshold:
                 x, y, w, h = bboxes[i].astype('int')
-                color = (0, 255, 0) if labels[i] == 1 else (0, 0, 255)
-
+                if labels[i] == 1:
+                    color = (0, 255, 0)
+                    name = "image"
+                else:
+                    color = (0, 0, 255)
+                    name = "object"
+                cv.rectangle(cv_img, (x, y-30), (x+150, y), color, -1)
                 cv.rectangle(cv_img, (x, y), (w, h), color, 3)
+                cv.putText(cv_img, name, (x+5, y-5), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,0), thickness=2)
+
         return cv.cvtColor(cv_img, cv.COLOR_BGR2RGB)
 
     def image_path(self) -> str:
