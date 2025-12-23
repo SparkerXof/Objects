@@ -1,3 +1,4 @@
+import os, random
 import cv2 as cv
 from PIL import Image, ImageTk
 import numpy as np
@@ -25,8 +26,11 @@ class App():
         self.upload_button = tk.Button(self.frame, text="Upload Image", command=self.upload_image)
         self.upload_button.grid(column=0, row=0, sticky='w', padx=5, pady=5)
 
+        self.upload_button = tk.Button(self.frame, text="Random Image", command=self.random_image)
+        self.upload_button.grid(column=1, row=0, sticky='w', padx=5, pady=5)
+
         self.inference_button = tk.Button(self.frame, text="Find boxes", command=self.inference_image)
-        self.inference_button.grid(column=1, row=0, sticky='w', padx=5, pady=5)
+        self.inference_button.grid(column=2, row=0, sticky='w', padx=5, pady=5)
     
     def draw_bboxes(self, img, bboxes, labels, scores, threshold):
         cv_img = np.array(img)[:, :, ::-1].copy()
@@ -35,13 +39,13 @@ class App():
                 x, y, w, h = bboxes[i].astype('int')
                 if labels[i] == 1:
                     color = (0, 255, 0)
-                    name = "image"
+                    name = "image %.2f" % scores[i]
                 else:
                     color = (0, 0, 255)
-                    name = "object"
-                cv.rectangle(cv_img, (x, y-30), (x+150, y), color, -1)
-                cv.rectangle(cv_img, (x, y), (w, h), color, 3)
-                cv.putText(cv_img, name, (x+5, y-5), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,0), thickness=2)
+                    name = "object %.2f" % scores[i]
+                cv.rectangle(cv_img, (x, y-30), (x+100, y), color, -1)
+                cv.rectangle(cv_img, (x, y), (w, h), color, 2)
+                cv.putText(cv_img, name, (x+5, y-5), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(0,0,0), thickness=1)
 
         return cv.cvtColor(cv_img, cv.COLOR_BGR2RGB)
 
@@ -49,6 +53,13 @@ class App():
         filetypes = [("Image files", "*.png;*.jpg;*.jpeg;*.bmp"), ("All files", '*.*')]
         return filedialog.askopenfilename(filetypes=filetypes)
     
+    def random_image(self):
+        test_images = os.listdir("./data/test/images/")
+        img_file = random.choice(test_images)
+        self.imagepath = "./data/test/images/" + img_file
+        self.image = ImageTk.PhotoImage(Image.open(self.imagepath).resize((640, 480)))
+        self.canvas.create_image(1, 1, image=self.image, anchor=tk.NW)
+
     def upload_image(self):
         self.imagepath = self.image_path()
         self.image = ImageTk.PhotoImage(Image.open(self.imagepath).resize((640, 480)))
@@ -57,10 +68,11 @@ class App():
     def inference_image(self):
         img = Image.open(self.imagepath)
         res = run_inference(self.model, img, self.device)
+        print(res)
         self.boxed_image = Image.fromarray(self.draw_bboxes(img=img, 
                                                             bboxes=res[0]['boxes'].numpy(), 
                                                             labels=res[0]['labels'].numpy(), 
                                                             scores=res[0]['scores'].numpy(), 
-                                                            threshold=0.9))
+                                                            threshold=0.5))
         self.boxed_image = ImageTk.PhotoImage(self.boxed_image.resize((640, 480)))
         self.canvas.create_image(1, 1, image=self.boxed_image, anchor=tk.NW)

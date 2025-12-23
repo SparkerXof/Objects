@@ -27,11 +27,11 @@ class ObjectDataset(torch.utils.data.Dataset):
         img_boxes = []
         img_labels = []
         
+        
         with open(annot_path, 'r') as file:
             for annot in file.read().splitlines():
-                data = np.array(annot)
-                data = np.char.split(data)
-                data = data.astype(float)
+                strdata = annot.split()
+                data = np.array(strdata, dtype=np.float64)
                 if len(data) > 5:
                     x_cords = data[1:-1:2]
                     y_cords = data[2:-2:2]
@@ -63,7 +63,7 @@ class ObjectDataset(torch.utils.data.Dataset):
         target["labels"] = img_labels
         target["area"] = area
         target["iscrowd"] = iscrowd
-        target["image_id"] = image_id
+        target["image_id"] = idx
 
         if self.transforms:
             img_res = self.transforms(img_res)
